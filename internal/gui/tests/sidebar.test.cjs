@@ -16,7 +16,7 @@ function serve(lang, reads) {
   return async (route) => {
     const url = new URL(route.request().url());
     const json = (data) => route.fulfill({ json: data });
-    if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:${JSON.stringify(lang)},theme:"light",web:false};` });
+    if (url.pathname === "/boot.js") return route.fulfill({ contentType: "text/javascript", body: `window.bootPrefs = {lang:${JSON.stringify(lang)},theme:"light",web:false,sideGateway:{url:"http://127.0.0.1:3425"}};` });
     if (url.pathname === "/wails/runtime.js") return route.fulfill({ contentType: "text/javascript", body: "export const Window = {};" });
     if (url.pathname === "/api/state") return json(state);
     if (url.pathname === "/api/providers") { reads.push(performance.now()); return json({ providers: [], presets: [], excluded: [], gateway: { url: "http://127.0.0.1:3425", running: true, window: true } }); }
@@ -89,8 +89,9 @@ for (const engine of (process.env.BROWSER ? [process.env.BROWSER] : ["chromium",
         if (sel === "#prefs") assert.notEqual(pressed, bg, `${sel} pressed darkens`);
       }
 
-      // the gateway's address at the foot, read once the window has settled
-      await page.locator("#sideGw").waitFor();
+      // the gateway's address at the foot, drawn from boot.js ahead of the
+      // read, not held back until the providers have come in
+      assert.ok(await page.locator("#sideGw").isVisible(), "the gateway's line from boot.js");
       assert.match(await page.locator("#sideGw").textContent(), /127\.0\.0\.1:3425/);
       assert.ok(await page.locator("#sideGw span").evaluate((s) => s.scrollWidth <= s.clientWidth), "the address is read whole");
       assert.equal(reads.length, 1, "read once for the sidebar");

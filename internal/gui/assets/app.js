@@ -24922,6 +24922,13 @@ function renderCrumb(items) {
 }
 // the gateway at the sidebar's foot: where it listens, or that it doesn't
 var sideGwAt = null;
+// boot.js says where the gateway listens before the first paint, so the
+// line is there from the start, not only once providers has come in; the
+// read at 1500ms stands down, the one read of providers serving both
+function renderSideGwBoot() {
+  const b = window.bootPrefs?.sideGateway;
+  if (b?.url) renderSideGw({ url: b.url, running: true });
+}
 function sideGwRead() {
   if (!(sideGwRead.due && sideNav() && !sideGwAt)) return;
   // the list is not read yet: the read the Providers page is made ready
@@ -24954,6 +24961,7 @@ if (mode === "window") {
   $("#sideGw").onclick = () => { show("gateway"); $("#sideGw").blur(); };
   sideQuery.addEventListener?.("change", layoutNav);
   layoutNav();
+  renderSideGwBoot();
   $("#sideToggle").onclick = toggleSideNav;
   sideDrag($("#sideEdge"));
   sideBars();
